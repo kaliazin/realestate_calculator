@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор розрахунку вартості нерухомості</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+        
+        .date-section {
+            background: #ecf0f1;
+            padding: 15px 20px;
+            border-bottom: 1px solid #ddd;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .section {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 18px;
+            transition: all 0.3s ease;
+        }
+        
+        .object-info-section {
+            height: fit-content;
+        }
+        
+        .section:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .section h2 {
+            color: #2c3e50;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .form-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+        
+        label {
+            font-weight: 600;
+            color: #34495e;
+            font-size: 0.9em;
+        }
+        
+        input, select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        .currency-display {
+            background: #e8f4f8;
+            padding: 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            color: #2980b9;
+            text-align: right;
+        }
+        
+        .dashboard {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 18px;
+            height: fit-content;
+        }
+        
+        .dashboard h2 {
+            color: white;
+            border-bottom-color: rgba(255,255,255,0.3);
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 15px;
+        }
+        
+        .info-item {
+            background: rgba(255,255,255,0.1);
+            padding: 12px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .info-item strong {
+            display: block;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            opacity: 0.9;
+        }
+        
+        .info-item span {
+            font-size: 1em;
+            font-weight: 600;
+        }
+        
+        .payment-schedule-section {
+            grid-column: 1 / -1;
+            margin-top: 20px;
+        }
+        
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75em;
+            margin-top: 15px;
+        }
+        
+        .schedule-table thead {
+            background: #2c3e50;
+        }
+        
+        .schedule-table th {
+            background: #2c3e50;
+            color: white;
+            padding: 8px 4px;
+            text-align: center;
+            font-size: 0.9em;
+            border: 1px solid #34495e;
+        }
+        
+        .schedule-table td {
+            padding: 6px 4px;
+            text-align: center;
+            border: 1px solid #ddd;
+            font-size: 0.85em;
+        }
+        
+        .schedule-table tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .schedule-table tbody tr:hover {
+            background: #e3f2fd;
+        }
+        
+        .first-payment {
+            background: #e8f5e8 !important;
+        }
+        
+        .grace-period {
+            background: #fff3cd !important;
+        }
+        
+        .table-total {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin: 20px;
+        }
+        
+        .action-button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .action-button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .action-button.save {
+            background: #27ae60;
+        }
+        
+        .action-button.save:hover {
+            background: #219653;
+        }
+        
+        .exchange-rate-button {
+            background: #f39c12;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .exchange-rate-button:hover {
+            background: #e67e22;
+        }
+        
+        .exchange-rate-button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        @media (max-width: 900px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .date-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+        
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .container {
+                box-shadow: none;
+            }
+            
+            .action-buttons {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Калькулятор розрахунку вартості нерухомості</h1>
+        </div>
+        
+        <div class="date-section">
+            <div class="form-group">
+                <label for="calculationDate">Дата формування розрахунку:</label>
+                <input type="date" id="calculationDate">
+            </div>
+            <div class="form-group">
+                <label for="firstPaymentDate">Дата першого платежу:</label>
+                <input type="date" id="firstPaymentDate">
+            </div>
+        </div>
+        
+        <div class="content">
+            <div>
+                <div class="section object-info-section">
+                    <h2>Інформація про об'єкт</h2>
+                    
+                    <div class="form-group">
+                        <label for="complexName">Назва ЖК:</label>
+                        <select id="complexName">
+                            <option value="">Оберіть ЖК</option>
+                            <option value="Д136">Д136</option>
+                            <option value="The ONE">The ONE</option>
+                            <option value="Olegiv Podil">Olegiv Podil</option>
+                            <option value="Metropolis">Metropolis</option>
+                            <option value="Lucky Land">Lucky Land</option>
+                            <option value="Park Lake City">Park Lake City</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="buildingNumber">Номер будинку:</label>
+                        <input type="text" id="buildingNumber" placeholder="Введіть номер будинку">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sectionNumber">Номер секції:</label>
+                        <input type="text" id="sectionNumber" placeholder="Введіть номер секції">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="objectNumber">№ об'єкту:</label>
+                        <input type="text" id="objectNumber" placeholder="Введіть номер об'єкту">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="planningType">Тип планування:</label>
+                        <input type="text" id="planningType" placeholder="Введіть тип планування">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="roomCount">Кількість кімнат:</label>
+                        <input type="number" id="roomCount" placeholder="Введіть кількість кімнат" min="1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="projectArea">Проектна площа, м²:</label>
+                        <input type="number" id="projectArea" step="0.01" placeholder="0.00" min="0">
+                    </div>
+                </div>
+                
+                <div class="section dashboard">
+                    <h2>Інформація про угоду</h2>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <strong>Загальна вартість:</strong>
+                            <span id="totalCost">0.00 USD</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Перший внесок:</strong>
+                            <span id="totalFirstPayment">0.00 USD</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Щомісячний платіж:</strong>
+                            <span id="monthlyPayment">0.00 USD</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Переплата:</strong>
+                            <span id="overpayment">0.00 USD</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Економія від знижки:</strong>
+                            <span id="discountSaving">0.00 USD</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Термін погашення:</strong>
+                            <span id="paymentTerm">0 міс.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="section">
+                    <h2>Фінансовий розрахунок</h2>
+                    
+                    <div class="form-group">
+                        <label for="objectCostUSD">Вартість об'єкта (USD):</label>
+                        <input type="number" id="objectCostUSD" step="0.01" placeholder="0.00" min="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="exchangeRate">Курс USD/UAH:</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="number" id="exchangeRate" step="0.01" value="41.50" placeholder="41.50" min="0" style="flex: 1;">
+                            <button class="exchange-rate-button" id="getOschadRate">Ощадбанк</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Вартість об'єкта (UAH):</label>
+                        <div class="currency-display" id="objectCostUAH">0.00 ₴</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="costPerSqm">Вартість м² (USD):</label>
+                        <input type="number" id="costPerSqm" step="0.01" placeholder="0.00" min="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="firstPaymentPercent">Перший внесок (%):</label>
+                        <input type="number" id="firstPaymentPercent" step="0.1" value="10" placeholder="10.0" min="0" max="100">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="firstPaymentCount">Кількість перших внесків:</label>
+                        <select id="firstPaymentCount">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="firstPaymentDiscount">Знижка на перший внесок (%):</label>
+                        <input type="number" id="firstPaymentDiscount" step="0.1" value="0" placeholder="0.0" min="0" max="100">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="annualInterestRate">% здорожчання (річний):</label>
+                        <input type="number" id="annualInterestRate" step="0.1" value="0" placeholder="0.0" min="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="gracePeriod">Пільгові місяці:</label>
+                        <input type="number" id="gracePeriod" value="0" min="0" placeholder="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Залишок платежу (USD):</label>
+                        <div class="currency-display" id="remainingPayment">0.00</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="installmentTerm">Термін розтермінування (міс.):</label>
+                        <input type="number" id="installmentTerm" value="12" min="0" placeholder="12">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section payment-schedule-section">
+                <h2>Графік оплат</h2>
+                <div style="overflow-x: auto;">
+                    <table class="schedule-table" id="paymentSchedule">
+                        <thead>
+                            <tr>
+                                <th>№</th>
+                                <th>Дата платежу</th>
+                                <th>Тип платежу</th>
+                                <th>Тіло кредиту (USD)</th>
+                                <th>Відсотки (USD)</th>
+                                <th>Сума (USD)</th>
+                                <th>Сума (UAH)</th>
+                                <th>Залишок (USD)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="8">Введіть дані для розрахунку</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <button class="action-button" id="printBtn">
+                <span>🖨️</span> Друк
+            </button>
+            <button class="action-button save" id="saveBtn">
+                <span>💾</span> Зберегти в Excel
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        class RealEstateCalculator {
+            constructor() {
+                this.isUpdating = false;
+                this.init();
+            }
+            
+            init() {
+                this.setInitialDates();
+                this.bindEventHandlers();
+                this.calculate();
+            }
+            
+            setInitialDates() {
+                const today = new Date();
+                const nextMonth = new Date();
+                nextMonth.setMonth(nextMonth.getMonth() + 1);
+                
+                document.getElementById('calculationDate').valueAsDate = today;
+                document.getElementById('firstPaymentDate').valueAsDate = nextMonth;
+            }
+            
+            bindEventHandlers() {
+                const generalInputs = [
+                    'exchangeRate', 'firstPaymentPercent', 'firstPaymentCount',
+                    'firstPaymentDiscount', 'annualInterestRate', 'gracePeriod',
+                    'installmentTerm', 'calculationDate', 'firstPaymentDate'
+                ];
+                
+                generalInputs.forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.addEventListener('input', () => this.calculate());
+                        element.addEventListener('change', () => this.calculate());
+                    }
+                });
+                
+                const objectInfoInputs = [
+                    'complexName', 'buildingNumber', 'sectionNumber', 
+                    'objectNumber', 'planningType', 'roomCount'
+                ];
+                
+                objectInfoInputs.forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.addEventListener('input', () => this.calculate());
+                        element.addEventListener('change', () => this.calculate());
+                    }
+                });
+                
+                document.getElementById('objectCostUSD').addEventListener('input', (e) => {
+                    this.handleCostChange(e);
+                });
+                
+                document.getElementById('costPerSqm').addEventListener('input', (e) => {
+                    this.handleSqmPriceChange(e);
+                });
+                
+                document.getElementById('projectArea').addEventListener('input', (e) => {
+                    this.handleAreaChange(e);
+                });
+                
+                document.getElementById('getOschadRate').addEventListener('click', () => {
+                    this.getOschadbankExchangeRate();
+                });
+                
+                document.getElementById('printBtn').addEventListener('click', () => {
+                    window.print();
+                });
+                
+                document.getElementById('saveBtn').addEventListener('click', () => {
+                    this.saveToExcel();
+                });
+            }
+            
+            handleCostChange(e) {
+                if (this.isUpdating) return;
+                
+                const cost = parseFloat(e.target.value) || 0;
+                const area = parseFloat(document.getElementById('projectArea').value) || 0;
+                
+                if (cost > 0 && area > 0) {
+                    this.isUpdating = true;
+                    document.getElementById('costPerSqm').value = (cost / area).toFixed(2);
+                    this.isUpdating = false;
+                }
+                
+                this.calculate();
+            }
+            
+            handleSqmPriceChange(e) {
+                if (this.isUpdating) return;
+                
+                const sqmPrice = parseFloat(e.target.value) || 0;
+                const area = parseFloat(document.getElementById('projectArea').value) || 0;
+                
+                if (sqmPrice > 0 && area > 0) {
+                    this.isUpdating = true;
+                    document.getElementById('objectCostUSD').value = (sqmPrice * area).toFixed(2);
+                    this.isUpdating = false;
+                }
+                
+                this.calculate();
+            }
+            
+            handleAreaChange(e) {
+                if (this.isUpdating) return;
+                
+                const area = parseFloat(e.target.value) || 0;
+                const sqmPrice = parseFloat(document.getElementById('costPerSqm').value) || 0;
+                
+                if (area > 0 && sqmPrice > 0) {
+                    this.isUpdating = true;
+                    document.getElementById('objectCostUSD').value = (sqmPrice * area).toFixed(2);
+                    this.isUpdating = false;
+                    this.calculate();
+                } else if (area > 0) {
+                    const cost = parseFloat(document.getElementById('objectCostUSD').value) || 0;
+                    if (cost > 0) {
+                        this.isUpdating = true;
+                        document.getElementById('costPerSqm').value = (cost / area).toFixed(2);
+                        this.isUpdating = false;
+                    }
+                }
+            }
+            
+            async getOschadbankExchangeRate() {
+                const button = document.getElementById('getOschadRate');
+                const originalText = button.textContent;
+                
+                try {
+                    button.disabled = true;
+                    button.textContent = 'Завантаження...';
+                    
+                    const response = await fetch('https://api.oschadbank.ua/currency');
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        const usdRate = data.find(currency => currency.ccy === 'USD');
+                        
+                        if (usdRate && usdRate.sale) {
+                            const rate = parseFloat(usdRate.sale);
+                            document.getElementById('exchangeRate').value = rate.toFixed(2);
+                            alert(`Курс USD від Ощадбанку: ${rate.toFixed(2)} грн`);
+                            this.calculate();
+                        } else {
+                            throw new Error('USD курс не знайдено');
+                        }
+                    } else {
+                        throw new Error('Помилка отримання даних');
+                    }
+                } catch (error) {
+                    console.error('Помилка отримання курсу Ощадбанку:', error);
+                    
+                    try {
+                        const nbuResponse = await fetch('https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?json');
+                        if (nbuResponse.ok) {
+                            const nbuData = await nbuResponse.json();
+                            const usdRate = nbuData.find(currency => currency.cc === 'USD');
+                            
+                            if (usdRate && usdRate.rate) {
+                                const rate = parseFloat(usdRate.rate);
+                                document.getElementById('exchangeRate').value = rate.toFixed(2);
+                                alert(`Курс USD від НБУ (резервний): ${rate.toFixed(2)} грн`);
+                                this.calculate();
+                            } else {
+                                throw new Error('Курс не знайдено');
+                            }
+                        } else {
+                            throw new Error('Помилка NBU API');
+                        }
+                    } catch (nbuError) {
+                        console.error('Помилка отримання курсу НБУ:', nbuError);
+                        const fixedRate = 41.50;
+                        document.getElementById('exchangeRate').value = fixedRate.toFixed(2);
+                        alert(`Не вдалося отримати актуальний курс. Використано орієнтовний: ${fixedRate.toFixed(2)} грн`);
+                        this.calculate();
+                    }
+                } finally {
+                    button.disabled = false;
+                    button.textContent = originalText;
+                }
+            }
+            
+            calculate() {
+                const data = this.getFormData();
+                
+                document.getElementById('objectCostUAH').textContent = 
+                    (data.objectCostUSD * data.exchangeRate).toFixed(2) + ' ₴';
+                
+                const firstPaymentAmount = (data.objectCostUSD * data.firstPaymentPercent) / 100;
+                const remainingAmount = data.objectCostUSD - firstPaymentAmount;
+                document.getElementById('remainingPayment').textContent = remainingAmount.toFixed(2);
+                
+                this.generateSchedule(data);
+                this.updateDashboard(data);
+            }
+            
+            getFormData() {
+                return {
+                    objectCostUSD: parseFloat(document.getElementById('objectCostUSD').value) || 0,
+                    exchangeRate: parseFloat(document.getElementById('exchangeRate').value) || 41.50,
+                    firstPaymentPercent: parseFloat(document.getElementById('firstPaymentPercent').value) || 0,
+                    firstPaymentCount: parseInt(document.getElementById('firstPaymentCount').value) || 1,
+                    firstPaymentDiscount: parseFloat(document.getElementById('firstPaymentDiscount').value) || 0,
+                    installmentTerm: parseInt(document.getElementById('installmentTerm').value) || 0,
+                    annualInterestRate: parseFloat(document.getElementById('annualInterestRate').value) || 0,
+                    gracePeriod: parseInt(document.getElementById('gracePeriod').value) || 0,
+                    firstPaymentDate: document.getElementById('firstPaymentDate').value
+                };
+            }
+            
+            generateSchedule(data) {
+                const tbody = document.querySelector('#paymentSchedule tbody');
+                
+                if (data.objectCostUSD === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8">Введіть дані для розрахунку</td></tr>';
+                    return;
+                }
+                
+                // ЛОГІКА З ВАШОГО КОРЕКТНОГО ФАЙЛУ
+                
+                // 1. Розраховуємо перший внесок
+                const firstPaymentTotal = data.objectCostUSD * data.firstPaymentPercent / 100;
+                const discount = firstPaymentTotal * data.firstPaymentDiscount / 100;
+                const firstPaymentAfterDiscount = firstPaymentTotal - discount;
+                const firstPaymentPerInstallment = firstPaymentAfterDiscount / data.firstPaymentCount;
+                
+                // 2. Залишок для розтермінування (після всіх перших внесків)
+                const loanAmount = data.objectCostUSD - firstPaymentTotal;
+                
+                // 3. Місячна ставка
+                const monthlyRate = data.annualInterestRate / 100 / 12;
+                
+                let rows = [];
+                let paymentNum = 0;
+                let totalPaid = 0;
+                let totalInterest = 0;
+                let currentBalance = data.objectCostUSD; // Для відображення в таблиці
+                const startDate = new Date(data.firstPaymentDate);
+                
+                // ПЕРШІ ВНЕСКИ
+                for (let i = 0; i < data.firstPaymentCount; i++) {
+                    paymentNum++;
+                    currentBalance -= firstPaymentPerInstallment;
+                    totalPaid += firstPaymentPerInstallment;
+                    
+                    const paymentDate = new Date(startDate);
+                    paymentDate.setMonth(paymentDate.getMonth() + i);
+                    
+                    rows.push(`
+                        <tr class="first-payment">
+                            <td>${paymentNum}</td>
+                            <td>${this.formatDate(paymentDate)}</td>
+                            <td>Перший внесок ${i + 1}/${data.firstPaymentCount}</td>
+                            <td>${firstPaymentPerInstallment.toFixed(2)}</td>
+                            <td>0.00</td>
+                            <td>${firstPaymentPerInstallment.toFixed(2)}</td>
+                            <td>${(firstPaymentPerInstallment * data.exchangeRate).toFixed(2)}</td>
+                            <td>${currentBalance.toFixed(2)}</td>
+                        </tr>
+                    `);
+                }
+                
+                // РОЗТЕРМІНУВАННЯ (якщо є залишок)
+                if (data.installmentTerm > 0 && loanAmount > 0) {
+                    
+                    if (monthlyRate === 0) {
+                        // БЕЗ ВІДСОТКІВ - просто ділимо рівномірно
+                        const monthlyPayment = loanAmount / data.installmentTerm;
+                        let loanBalance = loanAmount;
+                        
+                        for (let i = 0; i < data.installmentTerm; i++) {
+                            paymentNum++;
+                            
+                            let interest = 0;
+                            let principal = monthlyPayment;
+                            
+                            // Пільгові місяці не впливають при 0% ставці
+                            if (i === data.installmentTerm - 1) {
+                                principal = loanBalance; // Останній платіж - весь залишок
+                            }
+                            
+                            const totalPayment = principal + interest;
+                            loanBalance -= principal;
+                            currentBalance -= totalPayment;
+                            totalPaid += totalPayment;
+                            
+                            const paymentDate = new Date(startDate);
+                            paymentDate.setMonth(paymentDate.getMonth() + data.firstPaymentCount + i);
+                            
+                            const rowClass = i < data.gracePeriod ? 'grace-period' : '';
+                            const paymentType = i < data.gracePeriod ? 
+                                `Пільговий період ${i + 1}/${data.installmentTerm}` : 
+                                `Щомісячний платіж ${i + 1}/${data.installmentTerm}`;
+                            
+                            rows.push(`
+                                <tr class="${rowClass}">
+                                    <td>${paymentNum}</td>
+                                    <td>${this.formatDate(paymentDate)}</td>
+                                    <td>${paymentType}</td>
+                                    <td>${principal.toFixed(2)}</td>
+                                    <td>${interest.toFixed(2)}</td>
+                                    <td>${totalPayment.toFixed(2)}</td>
+                                    <td>${(totalPayment * data.exchangeRate).toFixed(2)}</td>
+                                    <td>${Math.max(0, loanBalance).toFixed(2)}</td>
+                                </tr>
+                            `);
+                        }
+                    } else {
+                        // З ВІДСОТКАМИ - КОРЕКТНИЙ АЛГОРИТМ З ПІЛЬГОВИМИ МІСЯЦЯМИ
+                        
+                        // 1. Розрахуємо скільки буде сплачено в пільговий період
+                        const gracePeriodPayment = data.gracePeriod > 0 ? 
+                            Math.round((loanAmount / data.installmentTerm) * 100) / 100 : 0;
+                        const totalGracePeriodPaid = gracePeriodPayment * data.gracePeriod;
+                        
+                        // 2. Залишок після пільгового періоду (на який будуть нараховуватись відсотки)
+                        const remainingAfterGrace = loanAmount - totalGracePeriodPaid;
+                        
+                        // 3. Кількість місяців з відсотками
+                        const interestTerms = data.installmentTerm - data.gracePeriod;
+                        
+                        // 4. Аннуїтетний платіж розраховуємо ТІЛЬКИ для залишку після пільгового періоду
+                        let A_show = 0;
+                        if (interestTerms > 0 && remainingAfterGrace > 0) {
+                            const A = remainingAfterGrace * (monthlyRate * Math.pow(1 + monthlyRate, interestTerms)) / 
+                                     (Math.pow(1 + monthlyRate, interestTerms) - 1);
+                            A_show = Math.round(A * 100) / 100;
+                        }
+                        
+                        // B = P (початковий баланс)
+                        let B = loanAmount;
+                        
+                        // ЦИКЛ ДЛЯ ВСІХ МІСЯЦІВ 1..n-1
+                        for (let k = 1; k <= data.installmentTerm - 1; k++) {
+                            paymentNum++;
+                            
+                            let I, D, payment;
+                            
+                            if (k <= data.gracePeriod) {
+                                // ПІЛЬГОВІ МІСЯЦІ - відсотки = 0
+                                I = 0; 
+                                D = gracePeriodPayment; // Рівномірна частина
+                                payment = D;
+                            } else {
+                                // ЗВИЧАЙНІ МІСЯЦІ - аннуїтетний алгоритм на залишок
+                                I = Math.round(B * monthlyRate * 100) / 100; // round(B * i, 2)
+                                D = Math.round((A_show - I) * 100) / 100;     // round(A_show - I, 2)
+                                payment = A_show;
+                            }
+                            
+                            B = B - D; // Зменшуємо баланс на основний борг
+                            currentBalance -= payment;
+                            totalPaid += payment;
+                            totalInterest += I;
+                            
+                            const paymentDate = new Date(startDate);
+                            paymentDate.setMonth(paymentDate.getMonth() + data.firstPaymentCount + k - 1);
+                            
+                            const rowClass = k <= data.gracePeriod ? 'grace-period' : '';
+                            const paymentType = k <= data.gracePeriod ? 
+                                `Пільговий період ${k}/${data.installmentTerm}` : 
+                                `Щомісячний платіж ${k}/${data.installmentTerm}`;
+                            
+                            rows.push(`
+                                <tr class="${rowClass}">
+                                    <td>${paymentNum}</td>
+                                    <td>${this.formatDate(paymentDate)}</td>
+                                    <td>${paymentType}</td>
+                                    <td>${D.toFixed(2)}</td>
+                                    <td>${I.toFixed(2)}</td>
+                                    <td>${payment.toFixed(2)}</td>
+                                    <td>${(payment * data.exchangeRate).toFixed(2)}</td>
+                                    <td>${Math.max(0, B).toFixed(2)}</td>
+                                </tr>
+                            `);
+                        }
+                        
+                        // ОСТАННІЙ МІСЯЦЬ
+                        paymentNum++;
+                        
+                        let I_last, A_last, D_last;
+                        
+                        if (data.installmentTerm <= data.gracePeriod) {
+                            // Останній місяць також пільговий
+                            I_last = 0;
+                            D_last = Math.round(B * 100) / 100; // Весь залишок
+                            A_last = D_last;
+                        } else {
+                            // Останній місяць звичайний - з відсотками
+                            I_last = Math.round(B * monthlyRate * 100) / 100; // round(B * i, 2)
+                            A_last = Math.round((B + I_last) * 100) / 100;    // round(B + I, 2)
+                            D_last = Math.round((A_last - I_last) * 100) / 100; // round(A_last - I, 2)
+                        }
+                        
+                        B = B - D_last; // should be 0.00
+                        
+                        currentBalance -= A_last;
+                        totalPaid += A_last;
+                        totalInterest += I_last;
+                        
+                        const lastPaymentDate = new Date(startDate);
+                        lastPaymentDate.setMonth(lastPaymentDate.getMonth() + data.firstPaymentCount + data.installmentTerm - 1);
+                        
+                        const isLastGrace = data.installmentTerm <= data.gracePeriod;
+                        const lastRowClass = isLastGrace ? 'grace-period' : '';
+                        const lastPaymentType = isLastGrace ? 
+                            `Пільговий період ${data.installmentTerm}/${data.installmentTerm}` : 
+                            `Щомісячний платіж ${data.installmentTerm}/${data.installmentTerm}`;
+                        
+                        rows.push(`
+                            <tr class="${lastRowClass}">
+                                <td>${paymentNum}</td>
+                                <td>${this.formatDate(lastPaymentDate)}</td>
+                                <td>${lastPaymentType}</td>
+                                <td>${D_last.toFixed(2)}</td>
+                                <td>${I_last.toFixed(2)}</td>
+                                <td>${A_last.toFixed(2)}</td>
+                                <td>${(A_last * data.exchangeRate).toFixed(2)}</td>
+                                <td>${Math.max(0, B).toFixed(2)}</td>
+                            </tr>
+                        `);
+                    }
+                }
+                
+                // Підсумок
+                rows.push(`
+                    <tr class="table-total">
+                        <td colspan="3">ЗАГАЛОМ:</td>
+                        <td>${(totalPaid - totalInterest).toFixed(2)}</td>
+                        <td>${totalInterest.toFixed(2)}</td>
+                        <td>${totalPaid.toFixed(2)}</td>
+                        <td>${(totalPaid * data.exchangeRate).toFixed(2)}</td>
+                        <td>0.00</td>
+                    </tr>
+                `);
+                
+                tbody.innerHTML = rows.join('');
+            }
+            
+            updateDashboard(data) {
+                const firstPaymentAmount = (data.objectCostUSD * data.firstPaymentPercent) / 100;
+                const discountAmount = (firstPaymentAmount * data.firstPaymentDiscount) / 100;
+                const discountedFirstPayment = firstPaymentAmount - discountAmount;
+                const remainingAmount = data.objectCostUSD - firstPaymentAmount;
+                
+                let totalMonthlyPayments = 0;
+                let avgMonthlyPayment = 0;
+                
+                if (data.installmentTerm > 0 && remainingAmount > 0) {
+                    const monthlyRate = data.annualInterestRate / 100 / 12;
+                    
+                    if (monthlyRate === 0) {
+                        // Без відсотків
+                        avgMonthlyPayment = remainingAmount / data.installmentTerm;
+                        totalMonthlyPayments = remainingAmount;
+                    } else {
+                        // З відсотками - ВРАХОВУЄМО ПІЛЬГОВІ МІСЯЦІ
+                        
+                        // 1. Розрахуємо скільки буде сплачено в пільговий період
+                        const gracePeriodPayment = data.gracePeriod > 0 ? 
+                            remainingAmount / data.installmentTerm : 0;
+                        const totalGracePeriodPaid = gracePeriodPayment * data.gracePeriod;
+                        
+                        // 2. Залишок після пільгового періоду
+                        const remainingAfterGrace = remainingAmount - totalGracePeriodPaid;
+                        
+                        // 3. Кількість місяців з відсотками
+                        const interestTerms = data.installmentTerm - data.gracePeriod;
+                        
+                        if (interestTerms > 0 && remainingAfterGrace > 0) {
+                            // 4. Аннуїтетний платіж для залишку після пільгового періоду
+                            avgMonthlyPayment = remainingAfterGrace * monthlyRate * Math.pow(1 + monthlyRate, interestTerms) / 
+                                              (Math.pow(1 + monthlyRate, interestTerms) - 1);
+                            
+                            // 5. Загальна сума за місяці з відсотками
+                            const totalInterestPayments = avgMonthlyPayment * interestTerms;
+                            
+                            // 6. Загальна сума розтермінування = пільгові + з відсотками
+                            totalMonthlyPayments = totalGracePeriodPaid + totalInterestPayments;
+                        } else {
+                            // Всі місяці пільгові
+                            avgMonthlyPayment = gracePeriodPayment;
+                            totalMonthlyPayments = remainingAmount;
+                        }
+                    }
+                }
+                
+                const totalCost = discountedFirstPayment + totalMonthlyPayments;
+                const overpayment = totalCost - data.objectCostUSD;
+                const totalTerm = data.installmentTerm === 0 ? data.firstPaymentCount : data.firstPaymentCount + data.installmentTerm;
+                
+                document.getElementById('totalCost').textContent = totalCost.toFixed(2) + ' USD';
+                document.getElementById('totalFirstPayment').textContent = discountedFirstPayment.toFixed(2) + ' USD';
+                document.getElementById('monthlyPayment').textContent = avgMonthlyPayment.toFixed(2) + ' USD';
+                document.getElementById('overpayment').textContent = overpayment.toFixed(2) + ' USD';
+                document.getElementById('discountSaving').textContent = discountAmount.toFixed(2) + ' USD';
+                document.getElementById('paymentTerm').textContent = totalTerm + ' міс.';
+            }
+            
+            formatDate(date) {
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}.${month}.${year}`;
+            }
+            
+            saveToExcel() {
+                const calculationDate = document.getElementById('calculationDate').value;
+                const complexName = document.getElementById('complexName').value;
+                const objectCostUSD = parseFloat(document.getElementById('objectCostUSD').value) || 0;
+                
+                if (objectCostUSD === 0) {
+                    alert('Будь ласка, введіть дані для розрахунку перед збереженням');
+                    return;
+                }
+                
+                try {
+                    const wb = XLSX.utils.book_new();
+                    
+                    const calculationData = [
+                        ['Калькулятор розрахунку вартості нерухомості'],
+                        [''],
+                        ['Дата формування розрахунку:', calculationDate],
+                        ['Назва ЖК:', complexName],
+                        ['Номер будинку:', document.getElementById('buildingNumber').value],
+                        ['Номер секції:', document.getElementById('sectionNumber').value],
+                        ['№ об\'єкту:', document.getElementById('objectNumber').value],
+                        ['Тип планування:', document.getElementById('planningType').value],
+                        ['Кількість кімнат:', document.getElementById('roomCount').value],
+                        ['Проектна площа, м²:', document.getElementById('projectArea').value],
+                        [''],
+                        ['Вартість об\'єкта (USD):', objectCostUSD],
+                        ['Курс USD/UAH:', document.getElementById('exchangeRate').value],
+                        ['Вартість об\'єкта (UAH):', objectCostUSD * parseFloat(document.getElementById('exchangeRate').value)],
+                        ['Вартість м² (USD):', document.getElementById('costPerSqm').value],
+                        ['Перший внесок (%):', document.getElementById('firstPaymentPercent').value],
+                        ['Кількість перших внесків:', document.getElementById('firstPaymentCount').value],
+                        ['Знижка на перший внесок (%):', document.getElementById('firstPaymentDiscount').value],
+                        ['% здорожчання (річний):', document.getElementById('annualInterestRate').value],
+                        ['Пільгові місяці:', document.getElementById('gracePeriod').value],
+                        ['Термін розтермінування (міс.):', document.getElementById('installmentTerm').value],
+                        [''],
+                        ['Загальна вартість:', document.getElementById('totalCost').textContent],
+                        ['Перший внесок:', document.getElementById('totalFirstPayment').textContent],
+                        ['Щомісячний платіж:', document.getElementById('monthlyPayment').textContent],
+                        ['Переплата:', document.getElementById('overpayment').textContent],
+                        ['Економія від знижки:', document.getElementById('discountSaving').textContent],
+                        ['Термін погашення:', document.getElementById('paymentTerm').textContent]
+                    ];
+                    
+                    const ws_calc = XLSX.utils.aoa_to_sheet(calculationData);
+                    XLSX.utils.book_append_sheet(wb, ws_calc, "Дані розрахунку");
+                    
+                    const table = document.getElementById('paymentSchedule');
+                    const ws_schedule = XLSX.utils.table_to_sheet(table);
+                    XLSX.utils.book_append_sheet(wb, ws_schedule, "Графік платежів");
+                    
+                    const fileName = `Розрахунок_нерухомості_${complexName}_${calculationDate.replace(/-/g, '')}.xlsx`;
+                    XLSX.writeFile(wb, fileName);
+                    
+                } catch (error) {
+                    console.error('Помилка збереження в Excel:', error);
+                    alert('Помилка збереження файлу. Спробуйте ще раз.');
+                }
+            }
+        }
+        
+        // Ініціалізація калькулятора
+        document.addEventListener('DOMContentLoaded', function() {
+            window.calculator = new RealEstateCalculator();
+        });
+    </script>
+</body>
+</html>
